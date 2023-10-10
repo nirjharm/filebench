@@ -409,6 +409,7 @@ flowoplib_filesetup(threadflow_t *threadflow, flowop_t *flowop,
 	return (FILEBENCH_OK);
 }
 
+
 /*
  * Determines the io buffer or random offset into tf_mem for
  * the IO operation. Returns FILEBENCH_ERROR on errors, FILEBENCH_OK otherwise.
@@ -461,8 +462,13 @@ flowoplib_iobufsetup(threadflow_t *threadflow, flowop_t *flowop,
 		    = (char *)malloc(iosize)) == NULL))
 			return (FILEBENCH_ERROR);
 
+
+		//Dedup buffer mods. See utils.h		
+		splitter(flowop->fo_buf, iosize, Duplicity, DuplicationBlockSize);
+
 		flowop->fo_buf_size = iosize;
 		*iobufp = flowop->fo_buf;
+
 	}
 
 	if (flowoplib_fileattrs(flowop) & FLOW_ATTR_DIRECTIO)

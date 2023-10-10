@@ -39,6 +39,56 @@
 #include "utils.h"
 #include "parsertypes.h"
 
+
+long Duplicity = 10;
+fbint_t DuplicationBlockSize = 4096;
+
+
+
+/*For dedup workloads, use duplicity in buffer generation*/
+// Function to fill the buffer with duplicity or random data
+void fillBufferWithDuplicity(char *buffer, fbint_t size, long duplicity) {
+    if (duplicity < 0 || duplicity > 100) {
+        printf("Duplicity percentage must be between 0 and 100.\n");
+        return;
+    }
+
+    srand((unsigned int)time(NULL));
+
+    long randomValue = rand() % 100; // Generate a random number between 0 and 99
+
+    if (randomValue >= duplicity) {
+        // If the random value is greater than or equal to duplicity, fill the buffer with random data
+        for (fbint_t i = 0; i < size; ++i) {
+            buffer[i] = (char)(rand() % 256);
+        }
+    }
+}
+
+// Function to split the buffer and fill it with duplicity or random data
+void splitter(char *buffer, fbint_t size, long duplicity, fbint_t duplicationBlockSize) {
+    if (size < duplicationBlockSize) {
+        fillBufferWithDuplicity(buffer, size, duplicity);
+    } else {
+        // Fill the buffer in blocks of DuplicationBlockSize bytes
+        fbint_t remainingSize = size;
+        caddr_t currentBuffer = buffer;
+
+        while (remainingSize >= duplicationBlockSize) {
+            fillBufferWithDuplicity(currentBuffer, duplicationBlockSize, duplicity);
+            currentBuffer += duplicationBlockSize;
+            remainingSize -= duplicationBlockSize;
+        }
+
+        // Fill the remaining portion
+        if (remainingSize > 0) {
+            fillBufferWithDuplicity(currentBuffer, remainingSize, duplicity);
+        }
+    }
+}
+
+
+
 /*
  * For now, just three routines: one to allocate a string in shared
  * memory, one to emulate a strlcpy() function and one to emulate a

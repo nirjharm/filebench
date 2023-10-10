@@ -143,6 +143,11 @@ extern procflow_t *my_procflow;	/* if slave process, procflow pointer */
 extern int errno;
 extern char *execname;
 
+extern long Duplicity;
+extern fbint_t DuplicationBlockSize;
+
+
+
 void filebench_log __V((int level, const char *fmt, ...));
 void filebench_shutdown(int error);
 void filebench_plugin_funcvecinit(void);

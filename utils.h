@@ -28,6 +28,8 @@
 
 #include "filebench.h"
 
+extern void splitter(char *buffer, fbint_t size, long duplicity, fbint_t DuplicationBlockSize);
+
 extern char *fb_stralloc(char *str);
 
 #ifdef HAVE_STRLCAT

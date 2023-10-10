@@ -363,6 +363,7 @@ fileset_alloc_file(filesetentry_t *entry)
 		 */
 		wsize = MIN(entry->fse_size - seek, FILE_ALLOC_BLOCK);
 
+		splitter(buf, wsize, Duplicity, DuplicationBlockSize);
 		ret = FB_WRITE(&fdesc, buf, wsize);
 		if (ret != wsize) {
 			filebench_log(LOG_ERROR,
