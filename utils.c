@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <fcntl.h>
+
 #include <errno.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
@@ -53,16 +55,32 @@ void fillBufferWithDuplicity(char *buffer, fbint_t size, long duplicity) {
         return;
     }
 
+    int urandom_fd = open("/dev/urandom", O_RDONLY);
     srand((unsigned int)time(NULL));
 
     long randomValue = rand() % 100; // Generate a random number between 0 and 99
 
     if (randomValue >= duplicity) {
         // If the random value is greater than or equal to duplicity, fill the buffer with random data
-        for (fbint_t i = 0; i < size; ++i) {
-            buffer[i] = (char)(rand() % 256);
+    	size_t bytesRead = read(urandom_fd, buffer, size);
+
+        if (bytesRead == -1) {
+            perror("Failed to read from /dev/urandom");
+            close(urandom_fd);
+            exit(EXIT_FAILURE);
         }
+
+        if (bytesRead < size) {
+            fprintf(stderr, "Insufficient data read from /dev/urandom\n");
+            close(urandom_fd);
+            exit(EXIT_FAILURE);
+        }
+
     }
+
+
+
+    close(urandom_fd);
 }
 
 // Function to split the buffer and fill it with duplicity or random data
