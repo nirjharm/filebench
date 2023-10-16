@@ -41,11 +41,38 @@
 #include "utils.h"
 #include "parsertypes.h"
 
+//set one of these to 1
+#define isDedup 0
+#define isCompress 1
+
+
 
 long Duplicity = 10;
 fbint_t DuplicationBlockSize = 4096;
 
+long compress_ratio = .1;
+fbint_t CompressionBlockSize=  4096;
 
+void fillBufferWithCompressibility(char * buffer, fbint_t size , double compress_ratio)
+{
+
+	if(compress_ratio < 0 || compress_ratio > 1)
+		return;
+
+	
+	
+	int urandom_fd = open("/dev/urandom", O_RDONLY);
+        size_t bytesRead = read(urandom_fd, buffer, size);
+
+
+	fbint_t elements_to_fix = (1.0-compress_ratio) * (double)size;
+
+	srand((unsigned int)time(NULL));
+	char a = rand()%256;
+	memset(buffer, a, elements_to_fix);
+
+	
+}
 
 /*For dedup workloads, use duplicity in buffer generation*/
 // Function to fill the buffer with duplicity or random data
@@ -85,24 +112,47 @@ void fillBufferWithDuplicity(char *buffer, fbint_t size, long duplicity) {
 
 // Function to split the buffer and fill it with duplicity or random data
 void splitter(char *buffer, fbint_t size, long duplicity, fbint_t duplicationBlockSize) {
-    if (size < duplicationBlockSize) {
+   fbint_t bs;
+#ifdef isDedup
+	bs = duplicationBlockSize;
+#endif
+#ifdef isCompress
+	bs = CompressionBlockSize;
+#endif
+
+if (size < bs) {
+#ifdef isDedup
         fillBufferWithDuplicity(buffer, size, duplicity);
+#endif
+#ifdef isCompress
+        fillBufferWithCompressibility(buffer, size, compress_ratio);
+#endif
     } else {
         // Fill the buffer in blocks of DuplicationBlockSize bytes
         fbint_t remainingSize = size;
         caddr_t currentBuffer = buffer;
 
-        while (remainingSize >= duplicationBlockSize) {
-            fillBufferWithDuplicity(currentBuffer, duplicationBlockSize, duplicity);
-            currentBuffer += duplicationBlockSize;
-            remainingSize -= duplicationBlockSize;
+        while (remainingSize >= bs) {
+#ifdef isDedup
+            fillBufferWithDuplicity(currentBuffer, bs, duplicity);
+#endif
+#ifdef isCompress
+        fillBufferWithCompressibility(currentBuffer, bs, compress_ratio);
+#endif
+            currentBuffer += bs;
+            remainingSize -= bs;
         }
 
         // Fill the remaining portion
         if (remainingSize > 0) {
+#ifdef isDedup
             fillBufferWithDuplicity(currentBuffer, remainingSize, duplicity);
+#endif
+#ifdef isCompress
+        fillBufferWithCompressibility(currentBuffer, remainingSize, compress_ratio);
+#endif
         }
-    }
+    } 
 }
 
 
